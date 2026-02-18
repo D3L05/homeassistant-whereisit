@@ -3,9 +3,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
 from . import models
+from .api import endpoints
 import os
 
 app = FastAPI(root_path="/hassio/ingress/whereisit")
+
+app.include_router(endpoints.router, prefix="/api")
 
 # CORS middleware for development flexibility
 app.add_middleware(

@@ -41,7 +41,7 @@ async def get_box_by_slug(db: AsyncSession, slug: str):
     return result.scalar_one_or_none()
 
 async def create_item(db: AsyncSession, item: schemas.ItemCreate, box_id: int):
-    db_item = models.Item(**item.dict(), box_id=box_id)
+    db_item = models.Item(**item.model_dump(), box_id=box_id)
     db.add(db_item)
     await db.commit()
     await db.refresh(db_item)

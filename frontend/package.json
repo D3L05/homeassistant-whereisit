@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,7 +9,19 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "lit": "^3.3.1"
+    "@material/mwc-button": "^0.27.0",
+    "@material/mwc-dialog": "^0.27.0",
+    "@material/mwc-drawer": "^0.27.0",
+    "@material/mwc-fab": "^0.27.0",
+    "@material/mwc-icon": "^0.27.0",
+    "@material/mwc-icon-button": "^0.27.0",
+    "@material/mwc-list": "^0.27.0",
+    "@material/mwc-snackbar": "^0.27.0",
+    "@material/mwc-textfield": "^0.27.0",
+    "@material/mwc-top-app-bar-fixed": "^0.27.0",
+    "@vaadin/router": "^2.0.1",
+    "html5-qrcode": "^2.3.8",
+    "lit": "^2.8.0"
   },
   "devDependencies": {
     "vite": "^7.3.1"

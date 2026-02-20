@@ -24,9 +24,14 @@ class BoxBase(BaseModel):
 class BoxCreate(BoxBase):
     unit_id: int
 
-class Box(BoxBase):
+class BoxSummary(BoxBase):
     id: int
     unit_id: int
+
+    class Config:
+        from_attributes = True
+
+class Box(BoxSummary):
     items: List[Item] = []
 
     class Config:
@@ -39,9 +44,30 @@ class UnitBase(BaseModel):
 class UnitCreate(UnitBase):
     pass
 
+class UnitUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
 class Unit(UnitBase):
     id: int
     boxes: List[Box] = []
 
     class Config:
         from_attributes = True
+
+class UnitResponse(UnitBase):
+    id: int
+
+    class Config:
+        from_attributes = True
+
+class BoxUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    slug: Optional[str] = None
+    unit_id: Optional[int] = None
+
+class ItemUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    quantity: Optional[int] = None

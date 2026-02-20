@@ -1,29 +1,40 @@
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: 'Roboto', sans-serif;
+  --primary-color: #03a9f4;
+  --accent-color: #ff9800;
+  --primary-background-color: #fafafa;
+  --mdc-theme-primary: var(--primary-color);
+  --mdc-theme-secondary: var(--accent-color);
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
+  background-color: var(--primary-background-color);
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.unit-card, .box-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Exploding box animation simulation */
+@keyframes explode {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.box-grid {
+    animation: explode 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Page transitions */
+main {
+    animation: fadeIn 0.3s ease-out;
 }

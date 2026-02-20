@@ -1,16 +1,35 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
-    <link rel="stylesheet" href="./src/index.css" />
-    <script type="module" src="/src/my-element.js"></script>
-  </head>
-  <body>
-    <my-element>
-      <h1>Vite + Lit</h1>
-    </my-element>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <script>
+    // DYNAMIC BASE TAG FOR HA INGRESS (v0.1.9)
+    (function () {
+      let path = window.location.pathname;
+      const appPaths = ['/unit/', '/box/', '/search'];
+      for (const p of appPaths) {
+        const idx = path.indexOf(p);
+        if (idx !== -1) { path = path.substring(0, idx); break; }
+      }
+      if (!path.endsWith('/')) path += '/';
+
+      // Use document.write to force the base tag to be present BEFORE the preload scanner
+      // starts requesting index.css or where-is-it-app.js
+      document.write('<base href="' + path + '">');
+      console.log("[Prod Debug] Document.write injected base:", path);
+    })();
+  </script>
+  <link rel="icon" type="image/svg+xml" href="vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>whereisit</title>
+  <link href="https://fonts.googleapis.com/css?family=Material+Icons&display=block" rel="stylesheet">
+  <link rel="stylesheet" href="src/index.css" />
+  <script type="module" src="src/where-is-it-app.js"></script>
+</head>
+
+<body>
+  <where-is-it-app></where-is-it-app>
+</body>
+
 </html>

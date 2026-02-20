@@ -115,15 +115,18 @@ export class SearchView extends LitElement {
     }
 
     async _performSearch() {
+        // Debounce slightly or just execute immediately
         const input = this.shadowRoot.getElementById('searchInput');
-        const query = input ? input.value : '';
+        const query = input ? input.value.trim() : '';
 
-        if (query.trim().length < 2 && !this.selectedCategory) {
+        // Only block if BOTH text is empty AND no category is selected
+        if (query.length < 2 && !this.selectedCategory) {
             this.results = { boxes: [], items: [] };
             return;
         }
 
         try {
+            // If query is empty but category is selected, let it pass an empty ?q=
             let apiUrl = `/api/search?q=${encodeURIComponent(query)}`;
             if (this.selectedCategory) {
                 apiUrl += `&category=${encodeURIComponent(this.selectedCategory)}`;

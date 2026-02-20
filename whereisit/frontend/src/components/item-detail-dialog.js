@@ -68,9 +68,15 @@ export class ItemDetailDialog extends LitElement {
     }
 
     async show(item) {
+        console.log("[Prod Debug] Item detail wrapper called with item:", item);
         this.item = item;
         await this.updateComplete;
-        this.shadowRoot.querySelector('mwc-dialog').show();
+        const dialog = this.shadowRoot.querySelector('mwc-dialog');
+        if (dialog) {
+            dialog.show();
+        } else {
+            console.error("Could not find internal mwc-dialog");
+        }
     }
 
     render() {

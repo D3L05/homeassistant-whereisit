@@ -1,0 +1,17 @@
+#!/usr/bin/with-contenv bashio
+
+cd /app
+
+# Ensure database directory exists
+if [ ! -d "/data" ]; then
+    mkdir -p /data
+fi
+
+# Run migrations (create tables) - simple approach for now is app startup
+# In a real app we might want explicit migration command
+# But app.main:startup handles Base.metadata.create_all
+
+bashio::log.info "Starting WhereIsIt Addon..."
+
+# Start Uvicorn
+exec uvicorn app.main:app --host 0.0.0.0 --port 8000

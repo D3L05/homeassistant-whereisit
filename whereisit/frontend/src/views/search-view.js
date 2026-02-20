@@ -126,13 +126,15 @@ export class SearchView extends LitElement {
         }
 
         try {
-            // If query is empty but category is selected, let it pass an empty ?q=
-            let apiUrl = `/api/search?q=${encodeURIComponent(query)}`;
+            // Build the query string separately because urlForPath strips query parameters
+            let qs = `?q=${encodeURIComponent(query)}`;
             if (this.selectedCategory) {
-                apiUrl += `&category=${encodeURIComponent(this.selectedCategory)}`;
+                qs += `&category=${encodeURIComponent(this.selectedCategory)}`;
             }
 
-            const response = await fetch(window.AppRouter ? window.AppRouter.urlForPath(apiUrl) : apiUrl);
+            const apiPath = window.AppRouter ? window.AppRouter.urlForPath('/api/search') : '/api/search';
+            const response = await fetch(apiPath + qs);
+
             if (response.ok) {
                 this.results = await response.json();
             }

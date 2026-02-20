@@ -30,6 +30,26 @@ export class HomeView extends LitElement {
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       overflow: hidden;
     }
+    .category-chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 0 16px 16px 16px;
+    }
+    .chip {
+      background: #e0e0e0;
+      border: none;
+      border-radius: 16px;
+      padding: 6px 12px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: Roboto, sans-serif;
+    }
+    .chip.selected {
+      background: var(--mdc-theme-primary, #6200ee);
+      color: white;
+    }
     .search-section-title {
       padding: 12px 16px 4px 16px;
       font-size: 0.8em;
@@ -106,7 +126,9 @@ export class HomeView extends LitElement {
   static properties = {
     units: { type: Array },
     searchResults: { type: Object },
-    searchQuery: { type: String }
+    searchQuery: { type: String },
+    categories: { type: Array },
+    selectedCategory: { type: String }
   };
 
   constructor() {
@@ -114,10 +136,25 @@ export class HomeView extends LitElement {
     this.units = [];
     this.searchResults = { boxes: [], items: [] };
     this.searchQuery = '';
+    this.categories = [];
+    this.selectedCategory = null;
   }
 
   firstUpdated() {
     this._fetchUnits();
+    this._fetchCategories();
+  }
+
+  async _fetchCategories() {
+    try {
+      const response = await fetch('api/categories');
+      if (response.ok) {
+        this.categories = await response.json();
+        this.requestUpdate();
+      }
+    } catch (e) {
+      console.error("Error fetching categories", e);
+    }
   }
 
   async _fetchUnits() {
@@ -132,7 +169,7 @@ export class HomeView extends LitElement {
   }
 
   render() {
-    const hasSearch = this.searchQuery.length >= 2;
+    const hasSearch = this.searchQuery.length >= 2 || this.selectedCategory !== null;
 
     return html`
       <div class="search-container">
@@ -140,10 +177,19 @@ export class HomeView extends LitElement {
           label="Search items or boxes" 
           icon="search" 
           .value=${this.searchQuery}
-          @input=${this._handleSearch}
+          @input=${this._handleSearchInput}
           outlined
         ></mwc-textfield>
       </div>
+
+      ${this.categories && this.categories.length > 0 ? html`
+        <div class="category-chips">
+            <button class="chip ${!this.selectedCategory ? 'selected' : ''}" @click=${() => this._selectCategory(null)}>All</button>
+            ${this.categories.map(c => html`
+                <button class="chip ${this.selectedCategory === c ? 'selected' : ''}" @click=${() => this._selectCategory(c)}>${c}</button>
+            `)}
+        </div>
+      ` : ''}
 
       ${hasSearch ? html`
         <div class="search-results">
@@ -162,10 +208,12 @@ export class HomeView extends LitElement {
             ${this.searchResults.items.length > 0 ? html`
               <div class="search-section-title">Items</div>
               ${this.searchResults.items.map(item => html`
-                <mwc-list-item twoline graphic="icon" @click=${() => this._navigateToBox(item.box_id)}>
+                <mwc-list-item twoline graphic="medium" @click=${(e) => this._openItemDetail(e, item)}>
                   <span>${item.name}</span>
-                  <span slot="secondary">In Box: ${item.box ? item.box.name : 'Unknown'} • Qty: ${item.quantity}</span>
-                  <mwc-icon slot="graphic">category</mwc-icon>
+                  <span slot="secondary">In Box: ${item.box ? item.box.name : 'Unknown'} • Qty: ${item.quantity} ${item.category ? `• [${item.category}]` : ''}</span>
+                  ${item.photo_path
+        ? html`<img slot="graphic" src="${window.AppRouter ? window.AppRouter.urlForPath(item.photo_path) : item.photo_path}" style="width: 56px; height: 56px; object-fit: cover; border-radius: 4px;" />`
+        : html`<mwc-icon slot="graphic">category</mwc-icon>`}
                 </mwc-list-item>
               `)}
             ` : ''}
@@ -235,19 +283,30 @@ export class HomeView extends LitElement {
     this.shadowRoot.querySelector('edit-unit-dialog').show(unit);
   }
 
-  async _handleSearch(e) {
+  _handleSearchInput(e) {
     this.searchQuery = e.target.value;
-    if (this.searchQuery.length < 2) {
+    this._performSearch();
+  }
+
+  _selectCategory(category) {
+    this.selectedCategory = category;
+    this._performSearch();
+  }
+
+  async _performSearch() {
+    if (this.searchQuery.length < 2 && !this.selectedCategory) {
       this.searchResults = { boxes: [], items: [] };
       return;
     }
 
     try {
-      // RELATIVE PATH: Works perfectly with our <base> tag in HA Ingress
-      const response = await fetch(`api/search?q=${encodeURIComponent(this.searchQuery)}`);
+      let qs = `api/search?q=${encodeURIComponent(this.searchQuery)}`;
+      if (this.selectedCategory) {
+        qs += `&category=${encodeURIComponent(this.selectedCategory)}`;
+      }
+      const response = await fetch(qs);
       if (response.ok) {
         this.searchResults = await response.json();
-        console.log("[Prod Debug] Search results:", this.searchResults);
       }
     } catch (e) {
       console.error("Search error:", e);
@@ -274,6 +333,26 @@ export class HomeView extends LitElement {
       }, 100);
     } catch (e) {
       window.location.href = targetUrl;
+    }
+  }
+
+  _openItemDetail(e, item) {
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
+
+    const app = document.querySelector('where-is-it-app');
+    if (!app) return;
+
+    const dialog = app.shadowRoot.getElementById('globalItemDetailDialog');
+    if (dialog) {
+      dialog.show(item);
+
+      const editHandler = (ev) => {
+        dialog.removeEventListener('edit-item-requested', editHandler);
+        this._navigateToBox(ev.detail.item.box_id);
+      };
+      dialog.addEventListener('edit-item-requested', editHandler);
     }
   }
 

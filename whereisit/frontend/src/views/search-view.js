@@ -88,7 +88,7 @@ export class SearchView extends LitElement {
 
             <mwc-list-item noninteractive><b>Items</b></mwc-list-item>
             ${this.results.items.map(item => html`
-                <mwc-list-item twoline graphic="medium" @click=${() => this._navigateToBox(item.box_id)}>
+                <mwc-list-item twoline graphic="medium" @click=${(e) => this._openItemDetail(e, item)}>
                     <span>${item.name}</span>
                     <span slot="secondary">
                         In: ${item.box ? item.box.name : 'Unknown Box'} 
@@ -118,7 +118,7 @@ export class SearchView extends LitElement {
         const input = this.shadowRoot.getElementById('searchInput');
         const query = input ? input.value : '';
 
-        if (query.length < 2 && !this.selectedCategory) {
+        if (query.trim().length < 2 && !this.selectedCategory) {
             this.results = { boxes: [], items: [] };
             return;
         }
@@ -158,6 +158,31 @@ export class SearchView extends LitElement {
             }, 100);
         } catch (e) {
             window.location.href = targetUrl;
+        }
+    }
+
+    _openItemDetail(e, item) {
+        if (e && e.stopPropagation) {
+            e.stopPropagation();
+        }
+
+        // Find the global dialog injected by the main app
+        const app = document.querySelector('where-is-it-app');
+        if (!app) return;
+
+        const dialog = app.shadowRoot.getElementById('globalItemDetailDialog');
+        if (dialog) {
+            // Note: In Search View, item.box is already loaded via the backend relationship
+            dialog.show(item);
+
+            // Listen for the edit request from the detail dialog
+            const editHandler = (ev) => {
+                dialog.removeEventListener('edit-item-requested', editHandler);
+                // When we edit from search view, the cleanest way is to navigate to the box
+                // and open the edit dialog there. For now, let's just navigate to the box.
+                this._navigateToBox(ev.detail.item.box_id);
+            };
+            dialog.addEventListener('edit-item-requested', editHandler);
         }
     }
 }

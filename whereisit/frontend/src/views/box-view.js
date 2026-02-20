@@ -112,7 +112,7 @@ export class BoxView extends LitElement {
 
       <mwc-list>
         ${this.box.items.map(item => html`
-            <mwc-list-item twoline graphic="medium" hasMeta>
+            <mwc-list-item twoline graphic="medium" hasMeta @click=${(e) => this._openItemDetail(e, item)}>
                 <span>${item.name}</span>
                 <span slot="secondary">
                     ${item.description || ''} 
@@ -125,7 +125,6 @@ export class BoxView extends LitElement {
 
                 <div slot="meta" class="item-meta">
                     <span style="margin-right:8px;">x${item.quantity}</span>
-                    <mwc-icon-button icon="edit" @click=${(e) => this._openEditItemDialog(e, item)} style="--mdc-icon-size: 20px; color: gray;"></mwc-icon-button>
                 </div>
             </mwc-list-item>
         `)}

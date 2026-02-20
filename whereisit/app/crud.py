@@ -21,6 +21,24 @@ async def get_categories(db: AsyncSession):
     categories = [row[0] for row in result.all() if row[0] and row[0].strip()]
     return categories
 
+async def rename_category(db: AsyncSession, old_name: str, new_name: str):
+    from sqlalchemy import update
+    await db.execute(
+        update(models.Item)
+        .where(models.Item.category == old_name)
+        .values(category=new_name)
+    )
+    await db.commit()
+
+async def delete_category(db: AsyncSession, category_name: str):
+    from sqlalchemy import update
+    await db.execute(
+        update(models.Item)
+        .where(models.Item.category == category_name)
+        .values(category=None)
+    )
+    await db.commit()
+
 async def create_unit(db: AsyncSession, unit: schemas.UnitCreate):
     db_unit = models.StorageUnit(name=unit.name, description=unit.description)
     db.add(db_unit)

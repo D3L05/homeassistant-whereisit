@@ -10,7 +10,8 @@ import '@material/mwc-icon';
 import './views/home-view.js';
 import './views/unit-view.js';
 import './views/box-view.js';
-import './views/box-view.js';
+import './views/categories-view.js';
+import './components/item-detail-dialog.js';
 
 export class WhereIsItApp extends LitElement {
   static styles = css`
@@ -79,6 +80,7 @@ export class WhereIsItApp extends LitElement {
 
     router.setRoutes([
       { path: '/', component: 'home-view' },
+      { path: '/categories', component: 'categories-view' },
       { path: '/unit/:id', component: 'unit-view' },
       { path: '/box/:id', component: 'box-view' },
       { path: '(.*)', component: 'home-view' },
@@ -96,6 +98,11 @@ export class WhereIsItApp extends LitElement {
             <mwc-icon slot="graphic">home</mwc-icon>
             <span>Home</span>
           </mwc-list-item>
+          
+          <mwc-list-item graphic="icon" @click=${() => { this._closeDrawer(); Router.go(window.AppRouter.urlForPath('/categories').replace(/([^:])\/\/+/g, '$1/')); }}>
+            <mwc-icon slot="graphic">category</mwc-icon>
+            <span>Categories</span>
+          </mwc-list-item>
         </mwc-list>
 
         <div slot="appContent">
@@ -106,6 +113,8 @@ export class WhereIsItApp extends LitElement {
           <main></main>
         </div>
       </mwc-drawer>
+      
+      <item-detail-dialog id="globalItemDetailDialog"></item-detail-dialog>
     `;
   }
 

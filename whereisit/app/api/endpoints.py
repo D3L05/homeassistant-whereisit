@@ -154,6 +154,18 @@ async def upload_item_photo(item_id: int, file: UploadFile = File(...), db: Asyn
 async def read_categories(db: AsyncSession = Depends(database.get_db)):
     return await crud.get_categories(db)
 
+@router.put("/categories/{old_name}")
+async def rename_category(old_name: str, new_name: str, db: AsyncSession = Depends(database.get_db)):
+    if not new_name or not new_name.strip():
+        raise HTTPException(status_code=400, detail="New category name cannot be empty")
+    await crud.rename_category(db, old_name, new_name.strip())
+    return {"message": f"Category '{old_name}' renamed to '{new_name.strip()}'"}
+
+@router.delete("/categories/{category_name}")
+async def delete_category(category_name: str, db: AsyncSession = Depends(database.get_db)):
+    await crud.delete_category(db, category_name)
+    return {"message": f"Category '{category_name}' removed from all items"}
+
 @router.get("/search")
 async def search(q: str = "", category: str = None, db: AsyncSession = Depends(database.get_db)):
     return await crud.search_storage(db, query=q, category=category)

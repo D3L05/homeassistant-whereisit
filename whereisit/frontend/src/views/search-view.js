@@ -10,21 +10,67 @@ export class SearchView extends LitElement {
     :host { display: block; padding: 16px; }
     mwc-textfield { width: 100%; margin-bottom: 16px; }
     .results { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .category-chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 16px;
+      margin-bottom: 8px;
+    }
+    .chip {
+      background: #e0e0e0;
+      border: none;
+      border-radius: 16px;
+      padding: 6px 12px;
+      font-size: 0.875rem;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: Roboto, sans-serif;
+    }
+    .chip.selected {
+      background: var(--mdc-theme-primary, #6200ee);
+      color: white;
+    }
   `;
 
     static properties = {
-        results: { type: Object }
+        results: { type: Object },
+        categories: { type: Array },
+        selectedCategory: { type: String }
     };
 
     constructor() {
         super();
         this.results = { boxes: [], items: [] };
+        this.categories = [];
+        this.selectedCategory = null;
+    }
+
+    async connectedCallback() {
+        super.connectedCallback();
+        try {
+            const response = await fetch(window.AppRouter ? window.AppRouter.urlForPath(`/api/categories`) : `api/categories`);
+            if (response.ok) {
+                this.categories = await response.json();
+            }
+        } catch (e) {
+            console.error("Failed to load categories", e);
+        }
     }
 
     render() {
         return html`
       <h2>Search</h2>
-      <mwc-textfield label="Search items or boxes" icon="search" @input=${this._handleInput}></mwc-textfield>
+      <mwc-textfield id="searchInput" label="Search items or boxes" icon="search" @input=${this._handleInput}></mwc-textfield>
+
+      ${this.categories && this.categories.length > 0 ? html`
+        <div class="category-chips">
+            <button class="chip ${!this.selectedCategory ? 'selected' : ''}" @click=${() => this._selectCategory(null)}>All</button>
+            ${this.categories.map(c => html`
+                <button class="chip ${this.selectedCategory === c ? 'selected' : ''}" @click=${() => this._selectCategory(c)}>${c}</button>
+            `)}
+        </div>
+      ` : ''}
 
       <div class="results">
         <mwc-list>
@@ -59,15 +105,31 @@ export class SearchView extends LitElement {
     `;
     }
 
-    async _handleInput(e) {
-        const query = e.target.value;
-        if (query.length < 2) {
+    async _handleInput() {
+        this._performSearch();
+    }
+
+    _selectCategory(category) {
+        this.selectedCategory = category;
+        this._performSearch();
+    }
+
+    async _performSearch() {
+        const input = this.shadowRoot.getElementById('searchInput');
+        const query = input ? input.value : '';
+
+        if (query.length < 2 && !this.selectedCategory) {
             this.results = { boxes: [], items: [] };
             return;
         }
 
         try {
-            const response = await fetch(window.AppRouter ? window.AppRouter.urlForPath(`/api/search?q=${query}`) : `api/search?q=${query}`);
+            let apiUrl = `/api/search?q=${encodeURIComponent(query)}`;
+            if (this.selectedCategory) {
+                apiUrl += `&category=${encodeURIComponent(this.selectedCategory)}`;
+            }
+
+            const response = await fetch(window.AppRouter ? window.AppRouter.urlForPath(apiUrl) : apiUrl);
             if (response.ok) {
                 this.results = await response.json();
             }

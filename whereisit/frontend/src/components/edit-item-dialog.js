@@ -35,12 +35,26 @@ export class EditItemDialog extends LitElement {
   `;
 
     static properties = {
-        item: { type: Object }
+        item: { type: Object },
+        categories: { type: Array }
     };
 
     constructor() {
         super();
         this.item = null;
+        this.categories = [];
+    }
+
+    async connectedCallback() {
+        super.connectedCallback();
+        try {
+            const response = await fetch(window.AppRouter ? window.AppRouter.urlForPath(`/api/categories`) : `api/categories`);
+            if (response.ok) {
+                this.categories = await response.json();
+            }
+        } catch (e) {
+            console.error("Failed to load categories", e);
+        }
     }
 
     async show(item) {
@@ -57,7 +71,15 @@ export class EditItemDialog extends LitElement {
         <div>
           <mwc-textfield id="name" label="Name" .value=${this.item.name} dialogInitialFocus></mwc-textfield>
           <mwc-textfield id="description" label="Description" .value=${this.item.description || ''} icon="description"></mwc-textfield>
-          <mwc-textfield id="category" label="Category" .value=${this.item.category || ''} icon="category"></mwc-textfield>
+          
+          <div style="position: relative; margin-bottom: 16px; margin-top: 16px;">
+              <input type="text" id="category" list="edit-category-list" placeholder="Category" .value=${this.item.category || ''}
+                  style="width: 100%; padding: 16px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-family: Roboto, sans-serif; font-size: 1rem;" />
+              <datalist id="edit-category-list">
+                  ${this.categories.map(c => html`<option value="${c}"></option>`)}
+              </datalist>
+          </div>
+
           <mwc-textfield id="quantity" label="Quantity" type="number" .value=${this.item.quantity} icon="numbers"></mwc-textfield>
           
           <div class="file-input">

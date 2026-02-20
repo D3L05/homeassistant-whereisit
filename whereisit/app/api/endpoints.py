@@ -150,6 +150,10 @@ async def upload_item_photo(item_id: int, file: UploadFile = File(...), db: Asyn
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process image: {str(e)}")
 
+@router.get("/categories", response_model=List[str])
+async def read_categories(db: AsyncSession = Depends(database.get_db)):
+    return await crud.get_categories(db)
+
 @router.get("/search")
-async def search(q: str, db: AsyncSession = Depends(database.get_db)):
-    return await crud.search_storage(db, q)
+async def search(q: str = "", category: str = None, db: AsyncSession = Depends(database.get_db)):
+    return await crud.search_storage(db, query=q, category=category)

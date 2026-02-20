@@ -13,6 +13,14 @@ async def get_units(db: AsyncSession, skip: int = 0, limit: int = 100):
     )
     return result.scalars().all()
 
+async def get_categories(db: AsyncSession):
+    result = await db.execute(
+        select(models.Item.category).distinct().where(models.Item.category.isnot(None))
+    )
+    # Filter out empty strings and return list of strings
+    categories = [row[0] for row in result.all() if row[0] and row[0].strip()]
+    return categories
+
 async def create_unit(db: AsyncSession, unit: schemas.UnitCreate):
     db_unit = models.StorageUnit(name=unit.name, description=unit.description)
     db.add(db_unit)
@@ -109,28 +117,39 @@ async def update_item(db: AsyncSession, item_id: int, item_update: schemas.ItemU
         await db.refresh(db_item)
     return db_item
 
-async def search_storage(db: AsyncSession, query: str):
+async def search_storage(db: AsyncSession, query: str = "", category: str = None):
     from sqlalchemy import or_
+    import sqlalchemy
     
-    # Search boxes
-    boxes = await db.execute(
-        select(models.StorageBox)
-        .options(selectinload(models.StorageBox.items))
-        .where(models.StorageBox.name.ilike(f"%{query}%"))
-    )
-    boxes = boxes.scalars().all()
+    # Search boxes (only if no category filter applied, as boxes don't have categories)
+    if category:
+        boxes = []
+    else:
+        boxes = await db.execute(
+            select(models.StorageBox)
+            .options(selectinload(models.StorageBox.items))
+            .where(models.StorageBox.name.ilike(f"%{query}%"))
+        )
+        boxes = boxes.scalars().all()
     
     # Search items
-    items = await db.execute(
-        select(models.Item)
-        .options(selectinload(models.Item.box))
-        .where(
+    item_query = select(models.Item).options(selectinload(models.Item.box))
+    
+    conditions = []
+    if category:
+        conditions.append(models.Item.category == category)
+    if query:
+        conditions.append(
             or_(
                 models.Item.name.ilike(f"%{query}%"),
                 models.Item.category.ilike(f"%{query}%")
             )
         )
-    )
+        
+    if conditions:
+        item_query = item_query.where(sqlalchemy.and_(*conditions))
+        
+    items = await db.execute(item_query)
     items = items.scalars().all()
     
     return {"boxes": boxes, "items": items}

@@ -35,4 +35,4 @@ jobs:
           args: |
             --${{ matrix.arch }} \
             --target whereisit \
-            --image "ghcr.io/d3l05/whereisit-{arch}"
+            --addon

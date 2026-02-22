@@ -1,16 +1,40 @@
 import { LitElement, html, css } from 'lit';
 import '@material/mwc-icon-button';
+import '@material/mwc-icon';
 import '@material/mwc-fab';
-import '@material/mwc-list';
-import '@material/mwc-list/mwc-list-item.js';
 import '@material/mwc-dialog';
+import '@material/mwc-button';
 import '../components/add-item-dialog.js';
 import '../components/edit-box-dialog.js';
 import '../components/edit-item-dialog.js';
 
+// Color palette for item cards (same as categories view)
+const ITEM_COLORS = [
+    { bg: '#e3f2fd', fg: '#1565c0', accent: '#1976d2' },
+    { bg: '#fce4ec', fg: '#c62828', accent: '#e53935' },
+    { bg: '#e8f5e9', fg: '#2e7d32', accent: '#43a047' },
+    { bg: '#fff3e0', fg: '#e65100', accent: '#fb8c00' },
+    { bg: '#f3e5f5', fg: '#6a1b9a', accent: '#8e24aa' },
+    { bg: '#e0f7fa', fg: '#00695c', accent: '#00897b' },
+    { bg: '#fff8e1', fg: '#f57f17', accent: '#fdd835' },
+    { bg: '#fbe9e7', fg: '#bf360c', accent: '#ff5722' },
+    { bg: '#e8eaf6', fg: '#283593', accent: '#3f51b5' },
+    { bg: '#f1f8e9', fg: '#558b2f', accent: '#7cb342' },
+];
+
+function getColorForItem(name) {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return ITEM_COLORS[Math.abs(hash) % ITEM_COLORS.length];
+}
+
 export class BoxView extends LitElement {
     static styles = css`
     :host { display: block; height: 100%; position: relative; }
+
+    /* Header */
     .header {
       display: flex;
       align-items: center;
@@ -29,6 +53,164 @@ export class BoxView extends LitElement {
     .header-actions {
         display: flex;
     }
+    .page-subtitle {
+        padding: 0 16px 8px 56px;
+        font-size: 0.85rem;
+        color: #757575;
+        font-weight: 500;
+    }
+
+    /* Item Grid */
+    .item-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+        gap: 16px;
+        padding: 16px;
+        animation: fadeInGrid 0.4s ease-out;
+    }
+
+    @keyframes fadeInGrid {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Item Card */
+    .item-card {
+        background: white;
+        border-radius: 12px;
+        padding: 16px 12px 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        position: relative;
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.04);
+    }
+    .item-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    }
+
+    /* Photo or icon circle */
+    .item-visual {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+        overflow: hidden;
+        transition: transform 0.2s ease;
+        flex-shrink: 0;
+    }
+    .item-card:hover .item-visual {
+        transform: scale(1.08);
+    }
+    .item-visual img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .item-visual mwc-icon {
+        --mdc-icon-size: 28px;
+    }
+
+    .item-name {
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-align: center;
+        color: #333;
+        word-break: break-word;
+        line-height: 1.3;
+        margin-bottom: 6px;
+    }
+
+    /* Quantity badge */
+    .quantity-badge {
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 10px;
+        background: #f0f2f5;
+        color: #616161;
+        margin-bottom: 4px;
+    }
+
+    /* Category badge */
+    .category-badge {
+        font-size: 0.7rem;
+        font-weight: 500;
+        padding: 2px 10px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+
+    /* Card actions */
+    .card-actions {
+        display: flex;
+        gap: 4px;
+        margin-top: auto;
+        padding-top: 6px;
+        border-top: 1px solid rgba(0,0,0,0.06);
+        width: 100%;
+        justify-content: center;
+    }
+    .card-actions mwc-icon-button {
+        --mdc-icon-button-size: 36px;
+        --mdc-icon-size: 20px;
+        color: #9e9e9e;
+        transition: color 0.15s ease;
+    }
+    .card-actions mwc-icon-button:hover {
+        color: #424242;
+    }
+
+    /* Empty state */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 64px 32px;
+        text-align: center;
+        animation: fadeInGrid 0.5s ease-out;
+    }
+    .empty-icon-wrapper {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+    }
+    .empty-icon-wrapper mwc-icon {
+        --mdc-icon-size: 48px;
+        color: #1976d2;
+    }
+    .empty-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #424242;
+        margin-bottom: 8px;
+    }
+    .empty-subtitle {
+        font-size: 0.9rem;
+        color: #9e9e9e;
+        max-width: 280px;
+        line-height: 1.5;
+    }
+
+    /* QR and FAB */
     .qr-code {
         width: 150px;
         height: 150px;
@@ -43,15 +225,7 @@ export class BoxView extends LitElement {
       position: fixed;
       bottom: 24px;
       right: 24px;
-    }
-    mwc-list-item {
-        --mdc-list-item-meta-size: 80px;
-    }
-    .item-meta {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        width: 80px;
+      z-index: 10;
     }
   `;
 
@@ -72,18 +246,14 @@ export class BoxView extends LitElement {
 
     async _fetchBox(id) {
         try {
-            // Check if id is a number or a slug
             const isNumber = !isNaN(id) && !isNaN(parseFloat(id));
             const endpoint = isNumber ? `/api/boxes/${id}` : `/api/boxes/slug/${id}`;
-
             console.log(`[Prod Debug] Fetching box from: ${endpoint} (original id: ${id})`);
-
             const url = window.AppRouter ? window.AppRouter.urlForPath(endpoint) : endpoint;
             const response = await fetch(url);
-
             if (response.ok) {
                 this.box = await response.json();
-                this.boxId = this.box.id; // Correct to real ID if it was a slug
+                this.boxId = this.box.id;
             } else {
                 console.error("Box fetch failed", response.status);
             }
@@ -110,25 +280,47 @@ export class BoxView extends LitElement {
         </div>
       </div>
 
-      <mwc-list>
-        ${this.box.items.map(item => html`
-            <mwc-list-item twoline graphic="medium" hasMeta @click=${(e) => this._openItemDetail(e, item)}>
-                <span>${item.name}</span>
-                <span slot="secondary">
-                    ${item.description || ''} 
-                    ${item.category ? html`<span style="margin-left: 8px; font-style: italic; color: var(--mdc-theme-primary);">[${item.category}]</span>` : ''}
-                </span>
-                
-                ${item.photo_path
-                ? html`<img slot="graphic" src="${window.AppRouter ? window.AppRouter.urlForPath(item.photo_path) : item.photo_path}" style="width: 56px; height: 56px; object-fit: cover; border-radius: 4px;" />`
-                : html`<mwc-icon slot="graphic">category</mwc-icon>`}
+      ${this.box.items.length > 0
+                ? html`
+            <div class="page-subtitle">${this.box.items.length} item${this.box.items.length === 1 ? '' : 's'}</div>
+        ` : ''}
 
-                <div slot="meta" class="item-meta">
-                    <span style="margin-right:8px;">x${item.quantity}</span>
+      ${this.box.items.length === 0 ? html`
+        <div class="empty-state">
+            <div class="empty-icon-wrapper">
+                <mwc-icon>inventory_2</mwc-icon>
+            </div>
+            <div class="empty-title">This box is empty</div>
+            <div class="empty-subtitle">Tap the + button to add items to this box.</div>
+        </div>
+      ` : html`
+        <div class="item-grid">
+            ${this.box.items.map(item => {
+                    const color = getColorForItem(item.name);
+                    return html`
+                <div class="item-card" @click=${(e) => this._openItemDetail(e, item)}>
+                    <div class="item-visual" style="background: ${item.photo_path ? 'transparent' : color.bg};">
+                        ${item.photo_path
+                            ? html`<img src="${window.AppRouter ? window.AppRouter.urlForPath(item.photo_path) : item.photo_path}" alt="${item.name}" />`
+                            : html`<mwc-icon style="color: ${color.accent};">inventory_2</mwc-icon>`
+                        }
+                    </div>
+                    <div class="item-name">${item.name}</div>
+                    ${item.quantity > 1 ? html`
+                        <span class="quantity-badge">×${item.quantity}</span>
+                    ` : ''}
+                    ${item.category ? html`
+                        <span class="category-badge" style="background: ${color.bg}; color: ${color.fg};">${item.category}</span>
+                    ` : ''}
+                    <div class="card-actions">
+                        <mwc-icon-button icon="visibility" @click=${(e) => this._openItemDetail(e, item)} title="View Details"></mwc-icon-button>
+                        <mwc-icon-button icon="edit" @click=${(e) => this._openEditItemDialog(e, item)} title="Edit"></mwc-icon-button>
+                    </div>
                 </div>
-            </mwc-list-item>
-        `)}
-      </mwc-list>
+            `;
+                })}
+        </div>
+      `}
 
       <mwc-fab icon="add" @click=${this._openAddItemDialog}></mwc-fab>
       <add-item-dialog .boxId=${this.boxId} @item-added=${() => this._fetchBox(this.boxId)}></add-item-dialog>

@@ -14,28 +14,59 @@ async def get_units(db: AsyncSession, skip: int = 0, limit: int = 100):
     return result.scalars().all()
 
 async def get_categories(db: AsyncSession):
+    # Get categories from items
     result = await db.execute(
         select(models.Item.category).distinct().where(models.Item.category.isnot(None))
     )
-    # Filter out empty strings and return list of strings
-    categories = [row[0] for row in result.all() if row[0] and row[0].strip()]
-    return categories
+    item_categories = {row[0] for row in result.all() if row[0] and row[0].strip()}
+
+    # Get categories from the standalone Category table
+    result2 = await db.execute(select(models.Category.name))
+    standalone_categories = {row[0] for row in result2.all()}
+
+    # Union and sort
+    return sorted(item_categories | standalone_categories)
+
+async def create_category(db: AsyncSession, name: str):
+    existing = await db.execute(
+        select(models.Category).where(models.Category.name == name)
+    )
+    if existing.scalar_one_or_none():
+        return None  # Already exists
+    db_cat = models.Category(name=name)
+    db.add(db_cat)
+    await db.commit()
+    await db.refresh(db_cat)
+    return db_cat
 
 async def rename_category(db: AsyncSession, old_name: str, new_name: str):
     from sqlalchemy import update
+    # Rename on items
     await db.execute(
         update(models.Item)
         .where(models.Item.category == old_name)
         .values(category=new_name)
     )
+    # Rename in standalone table
+    await db.execute(
+        update(models.Category)
+        .where(models.Category.name == old_name)
+        .values(name=new_name)
+    )
     await db.commit()
 
 async def delete_category(db: AsyncSession, category_name: str):
-    from sqlalchemy import update
+    from sqlalchemy import update, delete
+    # Clear from items
     await db.execute(
         update(models.Item)
         .where(models.Item.category == category_name)
         .values(category=None)
+    )
+    # Remove from standalone table
+    await db.execute(
+        delete(models.Category)
+        .where(models.Category.name == category_name)
     )
     await db.commit()
 

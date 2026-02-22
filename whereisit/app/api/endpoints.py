@@ -150,6 +150,15 @@ async def upload_item_photo(item_id: int, file: UploadFile = File(...), db: Asyn
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process image: {str(e)}")
 
+@router.post("/categories")
+async def create_category(category: schemas.CategoryCreate, db: AsyncSession = Depends(database.get_db)):
+    if not category.name or not category.name.strip():
+        raise HTTPException(status_code=400, detail="Category name cannot be empty")
+    result = await crud.create_category(db, category.name.strip())
+    if result is None:
+        raise HTTPException(status_code=409, detail="Category already exists")
+    return {"message": f"Category '{category.name.strip()}' created"}
+
 @router.get("/categories", response_model=List[str])
 async def read_categories(db: AsyncSession = Depends(database.get_db)):
     return await crud.get_categories(db)

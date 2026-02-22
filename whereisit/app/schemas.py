@@ -75,3 +75,6 @@ class ItemUpdate(BaseModel):
     quantity: Optional[int] = None
     category: Optional[str] = None
     photo_path: Optional[str] = None
+
+class CategoryCreate(BaseModel):
+    name: str

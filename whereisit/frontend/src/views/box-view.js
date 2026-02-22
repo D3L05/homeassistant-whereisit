@@ -310,7 +310,7 @@ export class BoxView extends LitElement {
                         <span class="quantity-badge">×${item.quantity}</span>
                     ` : ''}
                     ${item.category ? html`
-                        <span class="category-badge" style="background: ${color.bg}; color: ${color.fg};">${item.category}</span>
+                        <span class="category-badge" style="background: ${getColorForItem(item.category).bg}; color: ${getColorForItem(item.category).fg};">${item.category}</span>
                     ` : ''}
                     <div class="card-actions">
                         <mwc-icon-button icon="visibility" @click=${(e) => this._openItemDetail(e, item)} title="View Details"></mwc-icon-button>

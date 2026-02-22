@@ -216,7 +216,7 @@ export class CategoriesView extends LitElement {
         position: fixed;
         bottom: 88px;
         left: 50%;
-        transform: translateX(-50%) translateY(100px);
+        transform: translateX(-50%) translateY(200px);
         background: #323232;
         color: white;
         padding: 12px 24px;
@@ -224,11 +224,15 @@ export class CategoriesView extends LitElement {
         font-size: 0.875rem;
         box-shadow: 0 4px 12px rgba(0,0,0,0.25);
         z-index: 100;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
         white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
     }
     .snackbar.show {
         transform: translateX(-50%) translateY(0);
+        opacity: 1;
+        pointer-events: auto;
     }
   `;
 

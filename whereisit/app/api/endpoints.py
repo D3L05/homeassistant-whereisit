@@ -175,6 +175,6 @@ async def delete_category(category_name: str, db: AsyncSession = Depends(databas
     await crud.delete_category(db, category_name)
     return {"message": f"Category '{category_name}' removed from all items"}
 
-@router.get("/search")
+@router.get("/search", response_model=schemas.SearchResponse)
 async def search(q: str = "", category: str = None, db: AsyncSession = Depends(database.get_db)):
     return await crud.search_storage(db, query=q, category=category)

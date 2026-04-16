@@ -39,6 +39,19 @@ class Box(BoxSummary):
     class Config:
         from_attributes = True
 
+class ItemWithBox(ItemBase):
+    """Item schema for search results - includes a shallow box reference."""
+    id: int
+    box_id: int
+    box: Optional[BoxSummary] = None
+
+    class Config:
+        from_attributes = True
+
+class SearchResponse(BaseModel):
+    boxes: List[BoxSummary] = []
+    items: List[ItemWithBox] = []
+
 class UnitBase(BaseModel):
     name: str
     description: Optional[str] = None

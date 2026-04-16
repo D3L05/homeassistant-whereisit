@@ -176,7 +176,6 @@ async def search_storage(db: AsyncSession, query: str = "", category: str = None
     else:
         boxes = await db.execute(
             select(models.StorageBox)
-            .options(selectinload(models.StorageBox.items))
             .where(models.StorageBox.name.ilike(f"%{query}%"))
         )
         boxes = boxes.scalars().all()

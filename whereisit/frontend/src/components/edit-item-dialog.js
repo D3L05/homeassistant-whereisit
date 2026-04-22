@@ -9,6 +9,33 @@ export class EditItemDialog extends LitElement {
       width: 100%;
       margin-top: 16px;
     }
+    .field-group {
+      margin-top: 16px;
+    }
+    .field-group label {
+      display: block;
+      margin-bottom: 6px;
+      color: rgba(0, 0, 0, 0.6);
+      font-family: Roboto, sans-serif;
+      font-size: 0.75rem;
+      font-weight: 400;
+    }
+    .field-group select {
+      width: 100%;
+      padding: 14px 16px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: Roboto, sans-serif;
+      font-size: 1rem;
+      background: white;
+      appearance: auto;
+    }
+    .field-group select:focus {
+      outline: none;
+      border-color: var(--mdc-theme-primary, #6200ee);
+      border-width: 2px;
+    }
     .file-input {
       margin-top: 16px;
       width: 100%;
@@ -36,13 +63,15 @@ export class EditItemDialog extends LitElement {
 
     static properties = {
         item: { type: Object },
-        categories: { type: Array }
+        categories: { type: Array },
+        _units: { type: Array, state: true }
     };
 
     constructor() {
         super();
         this.item = null;
         this.categories = [];
+        this._units = [];
     }
 
     async connectedCallback() {
@@ -59,8 +88,21 @@ export class EditItemDialog extends LitElement {
 
     async show(item) {
         this.item = item;
+        await this._fetchUnits();
         await this.updateComplete;
         this.shadowRoot.querySelector('mwc-dialog').show();
+    }
+
+    async _fetchUnits() {
+        try {
+            const url = window.AppRouter ? window.AppRouter.urlForPath('/api/units') : 'api/units';
+            const response = await fetch(url);
+            if (response.ok) {
+                this._units = await response.json();
+            }
+        } catch (e) {
+            console.error("Failed to load units", e);
+        }
     }
 
     render() {
@@ -81,6 +123,19 @@ export class EditItemDialog extends LitElement {
           </div>
 
           <mwc-textfield id="quantity" label="Quantity" type="number" .value=${this.item.quantity} icon="numbers"></mwc-textfield>
+
+          <div class="field-group">
+            <label>Move to Box</label>
+            <select id="box-select">
+              ${this._units.map(unit => html`
+                <optgroup label="${unit.name}">
+                  ${(unit.boxes || []).map(box => html`
+                    <option value="${box.id}" ?selected=${box.id === this.item.box_id}>${box.name}</option>
+                  `)}
+                </optgroup>
+              `)}
+            </select>
+          </div>
           
           <div class="file-input">
             <label>Update Photo</label>
@@ -106,6 +161,7 @@ export class EditItemDialog extends LitElement {
         const description = this.shadowRoot.getElementById('description').value;
         const category = this.shadowRoot.getElementById('category').value;
         const quantity = parseInt(this.shadowRoot.getElementById('quantity').value);
+        const box_id = parseInt(this.shadowRoot.getElementById('box-select').value);
         const photoInput = this.shadowRoot.getElementById('photo-upload');
 
         try {
@@ -113,7 +169,7 @@ export class EditItemDialog extends LitElement {
             const response = await fetch(url, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, description, category, quantity })
+                body: JSON.stringify({ name, description, category, quantity, box_id })
             });
 
             if (response.ok) {

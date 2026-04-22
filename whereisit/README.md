@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="WhereIsIt Logo" width="200" />
+  <img src="https://raw.githubusercontent.com/D3L05/homeassistant-whereisit/main/whereisit/logo.png" alt="WhereIsIt Logo" width="200" />
 </p>
 
 # WhereIsIt - Home Assistant Addon

@@ -7,25 +7,15 @@ import uuid
 async def get_units(db: AsyncSession, skip: int = 0, limit: int = 100):
     result = await db.execute(
         select(models.StorageUnit)
-        .options(selectinload(models.StorageUnit.boxes).selectinload(models.StorageBox.items))
+        .options(selectinload(models.StorageUnit.boxes).selectinload(models.StorageBox.items).selectinload(models.Item.categories))
         .offset(skip)
         .limit(limit)
     )
     return result.scalars().all()
 
 async def get_categories(db: AsyncSession):
-    # Get categories from items
-    result = await db.execute(
-        select(models.Item.category).distinct().where(models.Item.category.isnot(None))
-    )
-    item_categories = {row[0] for row in result.all() if row[0] and row[0].strip()}
-
-    # Get categories from the standalone Category table
-    result2 = await db.execute(select(models.Category.name))
-    standalone_categories = {row[0] for row in result2.all()}
-
-    # Union and sort
-    return sorted(item_categories | standalone_categories)
+    result = await db.execute(select(models.Category.name).order_by(models.Category.name))
+    return result.scalars().all()
 
 async def create_category(db: AsyncSession, name: str):
     existing = await db.execute(
@@ -71,22 +61,30 @@ async def delete_category(db: AsyncSession, category_name: str):
     await db.commit()
 
 async def create_unit(db: AsyncSession, unit: schemas.UnitCreate):
+    existing = await db.execute(select(models.StorageUnit).where(models.StorageUnit.name == unit.name))
+    if existing.scalar_one_or_none():
+        return await get_unit_by_name(db, unit.name)
+        
     db_unit = models.StorageUnit(name=unit.name, description=unit.description)
     db.add(db_unit)
     await db.commit()
     await db.refresh(db_unit)
     return db_unit
 
+async def get_unit_by_name(db: AsyncSession, name: str):
+    result = await db.execute(select(models.StorageUnit).where(models.StorageUnit.name == name))
+    return result.scalar_one_or_none()
+
 async def get_unit(db: AsyncSession, unit_id: int):
     result = await db.execute(
         select(models.StorageUnit)
-        .options(selectinload(models.StorageUnit.boxes).selectinload(models.StorageBox.items))
+        .options(selectinload(models.StorageUnit.boxes).selectinload(models.StorageBox.items).selectinload(models.Item.categories))
         .where(models.StorageUnit.id == unit_id)
     )
     return result.scalar_one_or_none()
 
 async def get_boxes(db: AsyncSession, skip: int = 0, limit: int = 100):
-    result = await db.execute(select(models.StorageBox).options(selectinload(models.StorageBox.items)).offset(skip).limit(limit))
+    result = await db.execute(select(models.StorageBox).options(selectinload(models.StorageBox.items).selectinload(models.Item.categories)).offset(skip).limit(limit))
     return result.scalars().all()
 
 async def create_box(db: AsyncSession, box: schemas.BoxCreate):
@@ -99,19 +97,41 @@ async def create_box(db: AsyncSession, box: schemas.BoxCreate):
     return db_box
 
 async def get_box(db: AsyncSession, box_id: int):
-    result = await db.execute(select(models.StorageBox).options(selectinload(models.StorageBox.items)).where(models.StorageBox.id == box_id))
+    result = await db.execute(select(models.StorageBox).options(selectinload(models.StorageBox.items).selectinload(models.Item.categories)).where(models.StorageBox.id == box_id))
     return result.scalar_one_or_none()
 
 async def get_box_by_slug(db: AsyncSession, slug: str):
-    result = await db.execute(select(models.StorageBox).options(selectinload(models.StorageBox.items)).where(models.StorageBox.slug == slug))
+    result = await db.execute(select(models.StorageBox).options(selectinload(models.StorageBox.items).selectinload(models.Item.categories)).where(models.StorageBox.slug == slug))
     return result.scalar_one_or_none()
 
 async def create_item(db: AsyncSession, item: schemas.ItemCreate, box_id: int):
-    db_item = models.Item(**item.model_dump(), box_id=box_id)
-    db.add(db_item)
+    print(f'[CREATE_ITEM] Categories received: {item.categories}')
+    item_data = item.model_dump()
+    categories_list = item_data.pop('categories', [])
+    
+    db_item = models.Item(**item_data, box_id=box_id)
+    
+    for cat_name in categories_list:
+        cat_name = cat_name.strip()
+        if not cat_name: continue
+        
+        cat_result = await db.execute(select(models.Category).where(models.Category.name == cat_name))
+        db_cat = cat_result.scalars().first()
+        if not db_cat:
+            db_cat = models.Category(name=cat_name)
+            db.add(db_cat)
+        db_item.categories.append(db_cat)
+            
+        db.add(db_item)
     await db.commit()
-    await db.refresh(db_item)
-    return db_item
+    
+    # Reload with categories to avoid MissingGreenlet error during serialization
+    result = await db.execute(
+        select(models.Item)
+        .options(selectinload(models.Item.categories))
+        .where(models.Item.id == db_item.id)
+    )
+    return result.scalar_one()
 
 async def delete_item(db: AsyncSession, item_id: int):
     result = await db.execute(select(models.Item).where(models.Item.id == item_id))
@@ -156,21 +176,44 @@ async def delete_box(db: AsyncSession, box_id: int):
     return db_box
 
 async def update_item(db: AsyncSession, item_id: int, item_update: schemas.ItemUpdate):
-    result = await db.execute(select(models.Item).where(models.Item.id == item_id))
+    print(f'[UPDATE_ITEM] Categories received: {item_update.categories}')
+    result = await db.execute(select(models.Item).options(selectinload(models.Item.categories)).where(models.Item.id == item_id))
     db_item = result.scalar_one_or_none()
     if db_item:
         update_data = item_update.model_dump(exclude_unset=True)
+        
+        if "categories" in update_data:
+            categories_list = update_data.pop("categories")
+            db_item.categories.clear()
+            
+            for cat_name in categories_list:
+                cat_name = cat_name.strip()
+                if not cat_name: continue
+                
+                cat_result = await db.execute(select(models.Category).where(models.Category.name == cat_name))
+                db_cat = cat_result.scalars().first()
+                if not db_cat:
+                    db_cat = models.Category(name=cat_name)
+                    db.add(db_cat)
+                db_item.categories.append(db_cat)
+                
         for key, value in update_data.items():
             setattr(db_item, key, value)
         await db.commit()
-        await db.refresh(db_item)
+        
+        # Reload with categories
+        result = await db.execute(
+            select(models.Item)
+            .options(selectinload(models.Item.categories))
+            .where(models.Item.id == db_item.id)
+        )
+        return result.scalar_one()
     return db_item
 
 async def search_storage(db: AsyncSession, query: str = "", category: str = None):
     from sqlalchemy import or_
     import sqlalchemy
     
-    # Search boxes (only if no category filter applied, as boxes don't have categories)
     if category:
         boxes = []
     else:
@@ -180,17 +223,20 @@ async def search_storage(db: AsyncSession, query: str = "", category: str = None
         )
         boxes = boxes.scalars().all()
     
-    # Search items
-    item_query = select(models.Item).options(selectinload(models.Item.box))
+    item_query = select(models.Item).options(selectinload(models.Item.box), selectinload(models.Item.categories))
     
     conditions = []
     if category:
-        conditions.append(models.Item.category == category)
+        item_query = item_query.join(models.Item.categories).where(models.Category.name == category)
+        
     if query:
+        if not category:
+            item_query = item_query.outerjoin(models.Item.categories)
+            
         conditions.append(
             or_(
                 models.Item.name.ilike(f"%{query}%"),
-                models.Item.category.ilike(f"%{query}%")
+                models.Category.name.ilike(f"%{query}%")
             )
         )
         
@@ -198,6 +244,6 @@ async def search_storage(db: AsyncSession, query: str = "", category: str = None
         item_query = item_query.where(sqlalchemy.and_(*conditions))
         
     items = await db.execute(item_query)
-    items = items.scalars().all()
+    items = items.unique().scalars().all()
     
     return {"boxes": boxes, "items": items}

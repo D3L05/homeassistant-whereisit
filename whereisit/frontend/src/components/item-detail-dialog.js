@@ -101,7 +101,11 @@ export class ItemDetailDialog extends LitElement {
             
             <div class="info-row">
                 <span class="label">Category</span>
-                <span class="value" style="color: var(--mdc-theme-primary);">${this.item.category || 'Uncategorized'}</span>
+                <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px;">
+                    ${this.item.categories && this.item.categories.length > 0 
+                        ? this.item.categories.map(cat => html`<span style="background: #e3f2fd; color: #1565c0; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 500;">${cat}</span>`)
+                        : html`<span style="color: gray; font-size: 0.8rem;">Uncategorized</span>`}
+                </div>
             </div>
 
             <div class="info-row">

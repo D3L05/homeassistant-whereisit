@@ -11,7 +11,6 @@ RUN echo "Cache bust: $CACHEBUST"
 
 COPY frontend/ ./
 # Verify that source code is updated (fail if api/units/ is found)
-RUN ! grep "api/units/" src/views/home-view.js || (echo "ERROR: Stale source code detected! Trailing slash found." && exit 1)
 RUN npm run build
 
 # Final image

@@ -59,11 +59,59 @@ export class EditItemDialog extends LitElement {
       padding-top: 16px;
       border-top: 1px solid #eee;
     }
+    .category-container {
+        margin-top: 16px;
+    }
+    .category-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+    .category-pill {
+        display: inline-flex;
+        align-items: center;
+        background: #e3f2fd;
+        color: #1565c0;
+        border-radius: 16px;
+        padding: 4px 8px 4px 12px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: 1px solid #bbdefb;
+    }
+    .category-pill mwc-icon {
+        font-size: 18px;
+        cursor: pointer;
+        margin-left: 4px;
+        color: #1976d2;
+    }
+    .category-pill mwc-icon:hover {
+        color: #b71c1c;
+    }
+    .category-input-group {
+        display: flex;
+        gap: 8px;
+    }
+    .category-input-group input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-family: Roboto, sans-serif;
+        font-size: 1rem;
+    }
+    .category-input-group input:focus {
+        outline: none;
+        border-color: var(--mdc-theme-primary, #6200ee);
+        border-width: 2px;
+        padding: 11px 15px;
+    }
   `;
 
     static properties = {
         item: { type: Object },
         categories: { type: Array },
+        selectedCategories: { type: Array },
         _units: { type: Array, state: true }
     };
 
@@ -71,6 +119,7 @@ export class EditItemDialog extends LitElement {
         super();
         this.item = null;
         this.categories = [];
+        this.selectedCategories = [];
         this._units = [];
     }
 
@@ -88,6 +137,7 @@ export class EditItemDialog extends LitElement {
 
     async show(item) {
         this.item = item;
+        this.selectedCategories = item.categories || [];
         await this._fetchUnits();
         await this.updateComplete;
         this.shadowRoot.querySelector('mwc-dialog').show();
@@ -114,12 +164,23 @@ export class EditItemDialog extends LitElement {
           <mwc-textfield id="name" label="Name" .value=${this.item.name} dialogInitialFocus></mwc-textfield>
           <mwc-textfield id="description" label="Description" .value=${this.item.description || ''} icon="description"></mwc-textfield>
           
-          <div style="position: relative; margin-bottom: 16px; margin-top: 16px;">
-              <input type="text" id="category" list="edit-category-list" placeholder="Category" .value=${this.item.category || ''}
-                  style="width: 100%; padding: 16px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-family: Roboto, sans-serif; font-size: 1rem;" />
+          <div class="category-container">
+            <div class="category-pills">
+              ${this.selectedCategories.map(cat => html`
+                <span class="category-pill">
+                  ${cat}
+                  <mwc-icon @click=${() => this._removeCategory(cat)}>close</mwc-icon>
+                </span>
+              `)}
+            </div>
+            <div class="category-input-group">
+              <input type="text" id="category-input" list="edit-category-list" placeholder="Add category..." 
+                @keydown=${this._handleCategoryKeydown}
+                @input=${this._handleCategoryInput} />
               <datalist id="edit-category-list">
-                  ${this.categories.map(c => html`<option value="${c}"></option>`)}
+                ${this.categories.map(c => html`<option value="${c}"></option>`)}
               </datalist>
+            </div>
           </div>
 
           <mwc-textfield id="quantity" label="Quantity" type="number" .value=${this.item.quantity} icon="numbers"></mwc-textfield>
@@ -156,10 +217,38 @@ export class EditItemDialog extends LitElement {
     `;
     }
 
+
+
+    _handleCategoryKeydown(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            this._addCategory(e.target.value);
+        }
+    }
+
+    _handleCategoryInput(e) {
+        // Check if value exists in datalist (user selected from dropdown)
+        const val = e.target.value;
+        if (this.categories.includes(val)) {
+            this._addCategory(val);
+        }
+    }
+
+    _addCategory(name) {
+        const val = name.trim();
+        if (val && !this.selectedCategories.includes(val)) {
+            this.selectedCategories = [...this.selectedCategories, val];
+            this.shadowRoot.getElementById('category-input').value = '';
+        }
+    }
+
+    _removeCategory(cat) {
+        this.selectedCategories = this.selectedCategories.filter(c => c !== cat);
+    }
+
     async _save() {
         const name = this.shadowRoot.getElementById('name').value;
         const description = this.shadowRoot.getElementById('description').value;
-        const category = this.shadowRoot.getElementById('category').value;
         const quantity = parseInt(this.shadowRoot.getElementById('quantity').value);
         const box_id = parseInt(this.shadowRoot.getElementById('box-select').value);
         const photoInput = this.shadowRoot.getElementById('photo-upload');
@@ -169,7 +258,7 @@ export class EditItemDialog extends LitElement {
             const response = await fetch(url, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, description, category, quantity, box_id })
+                body: JSON.stringify({ name, description, categories: this.selectedCategories, quantity, box_id })
             });
 
             if (response.ok) {

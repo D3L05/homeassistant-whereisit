@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .database import engine, Base
 from . import models
 from .api import endpoints
+from .routers import settings
 import os
 import logging
 from sqlalchemy import text
@@ -28,6 +29,7 @@ async def log_requests(request, call_next):
     return response
 
 app.include_router(endpoints.router, prefix="/api")
+app.include_router(settings.router, prefix="/api")
 
 # CORS middleware for development flexibility
 app.add_middleware(
@@ -64,6 +66,38 @@ async def startup():
         except Exception as e:
             if "duplicate column name" not in str(e).lower():
                 logger.warning(f"Failed to add photo_path column (might already exist): {e}")
+
+        # Multiple Categories Migration
+        try:
+            # Check if there are any items with a single legacy category that hasn't been migrated
+            legacy_items = await conn.execute(text("SELECT id, category FROM items WHERE category IS NOT NULL AND category != ''"))
+            legacy_items = legacy_items.fetchall()
+            
+            if legacy_items:
+                logger.info(f"Found {len(legacy_items)} items with legacy single categories. Migrating to many-to-many...")
+                for item_id, category_name in legacy_items:
+                    # 1. Ensure category exists
+                    await conn.execute(
+                        text("INSERT OR IGNORE INTO categories (name) VALUES (:name)"), 
+                        {"name": category_name}
+                    )
+                    # 2. Get category ID
+                    cat_result = await conn.execute(
+                        text("SELECT id FROM categories WHERE name = :name"), 
+                        {"name": category_name}
+                    )
+                    cat_id = cat_result.scalar()
+                    # 3. Link item to category
+                    await conn.execute(
+                        text("INSERT OR IGNORE INTO item_categories (item_id, category_id) VALUES (:item_id, :cat_id)"),
+                        {"item_id": item_id, "cat_id": cat_id}
+                    )
+                # 4. Clear the legacy column to prevent re-migration and save space
+                await conn.execute(text("UPDATE items SET category = NULL WHERE category IS NOT NULL"))
+                logger.info("Migration to multiple categories completed successfully.")
+        except Exception as e:
+            logger.error(f"Error during category migration: {e}")
+
 
 @app.get("/api/health")
 async def health_check():

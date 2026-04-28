@@ -309,9 +309,13 @@ export class BoxView extends LitElement {
                     ${item.quantity > 1 ? html`
                         <span class="quantity-badge">×${item.quantity}</span>
                     ` : ''}
-                    ${item.category ? html`
-                        <span class="category-badge" style="background: ${getColorForItem(item.category).bg}; color: ${getColorForItem(item.category).fg};">${item.category}</span>
-                    ` : ''}
+                    ${item.categories && item.categories.length > 0 ? html`
+                        <div style="display:flex; gap:4px; flex-wrap:wrap; justify-content:center; margin-bottom:8px;">
+                            ${item.categories.map(cat => html`
+                                <span class="category-badge" style="background: ${getColorForItem(cat).bg}; color: ${getColorForItem(cat).fg}; margin-bottom:0;">${cat}</span>
+                            `)}
+                        </div>
+                    ` : (item.category ? html`<span class="category-badge" style="background: ${getColorForItem(item.category).bg}; color: ${getColorForItem(item.category).fg};">${item.category}</span>` : '')}
                     <div class="card-actions">
                         <mwc-icon-button icon="visibility" @click=${(e) => this._openItemDetail(e, item)} title="View Details"></mwc-icon-button>
                         <mwc-icon-button icon="edit" @click=${(e) => this._openEditItemDialog(e, item)} title="Edit"></mwc-icon-button>

@@ -1,5 +1,5 @@
 name: "WhereIsIt"
-version: "0.4.39"
+version: "0.4.40"
 slug: "whereisit"
 description: "Physical storage management for Home Assistant"
 url: "https://github.com/D3L05/homeassistant-whereisit"
@@ -11,6 +11,7 @@ arch:
 init: false
 map:
   - config:rw
+  - share:rw
 options: {}
 schema: {}
 ingress: true

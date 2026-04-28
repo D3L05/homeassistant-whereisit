@@ -100,7 +100,7 @@ export class SearchView extends LitElement {
                     <span>${item.name}</span>
                     <span slot="secondary">
                         In: ${item.box ? item.box.name : 'Unknown Box'} 
-                        ${item.category ? html`<span style="margin-left: 8px; font-style: italic; color: var(--mdc-theme-primary);">[${item.category}]</span>` : ''}
+                        ${item.categories && item.categories.length > 0 ? html`<span style="margin-left: 8px; font-style: italic; color: var(--mdc-theme-primary);">[${item.categories.join(', ')}]</span>` : (item.category ? html`<span style="margin-left: 8px; font-style: italic; color: var(--mdc-theme-primary);">[${item.category}]</span>` : '')}
                     </span>
                     ${item.photo_path
                 ? html`<img slot="graphic" src="${window.AppRouter ? window.AppRouter.urlForPath(item.photo_path) : item.photo_path}" style="width: 56px; height: 56px; object-fit: cover; border-radius: 4px;" />`
@@ -188,12 +188,19 @@ export class SearchView extends LitElement {
             // Note: In Search View, item.box is already loaded via the backend relationship
             dialog.show(item);
 
-            // Listen for the edit request from the detail dialog
             const editHandler = (ev) => {
                 dialog.removeEventListener('edit-item-requested', editHandler);
-                // When we edit from search view, the cleanest way is to navigate to the box
-                // and open the edit dialog there. For now, let's just navigate to the box.
-                this._navigateToBox(ev.detail.item.box_id);
+                const editDialog = app.shadowRoot.getElementById('globalEditItemDialog');
+                if (editDialog) {
+                    editDialog.show(ev.detail.item);
+                    const updateHandler = () => {
+                        this._performSearch();
+                        editDialog.removeEventListener('item-updated', updateHandler);
+                        editDialog.removeEventListener('item-deleted', updateHandler);
+                    };
+                    editDialog.addEventListener('item-updated', updateHandler);
+                    editDialog.addEventListener('item-deleted', updateHandler);
+                }
             };
             dialog.addEventListener('edit-item-requested', editHandler);
         }

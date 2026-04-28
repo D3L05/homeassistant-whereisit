@@ -1,12 +1,19 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
 
 class ItemBase(BaseModel):
     name: str
     description: Optional[str] = None
     quantity: int = 1
-    category: Optional[str] = None
+    categories: List[str] = []
     photo_path: Optional[str] = None
+
+    @field_validator('categories', mode='before')
+    def extract_category_names(cls, v):
+        if not v: return []
+        if isinstance(v, list) and len(v) > 0 and hasattr(v[0], 'name'):
+            return [c.name for c in v]
+        return v
 
 class ItemCreate(ItemBase):
     pass
@@ -86,7 +93,7 @@ class ItemUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
     quantity: Optional[int] = None
-    category: Optional[str] = None
+    categories: Optional[List[str]] = None
     photo_path: Optional[str] = None
     box_id: Optional[int] = None
 

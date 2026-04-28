@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.40
+- Add Multi-Category support for items
+- Add Pills (chips) UI for managing multiple categories
+- Add Backup and Restore system in Settings
+- Fix search result "Edit" button redirect bug
+- Fix various async loading and database integrity issues
+
 ## 0.4.39
 - Add Ko-fi donation button to README
 

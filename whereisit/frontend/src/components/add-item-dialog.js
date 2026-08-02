@@ -172,6 +172,12 @@ export class AddItemDialog extends LitElement {
     const quantity = parseInt(inputs[2].value) || 1;
     const photoInput = this.shadowRoot.getElementById('photo-upload');
 
+    // Auto-add any text left in the category input
+    const catInput = this.shadowRoot.getElementById('category-input');
+    if (catInput && catInput.value.trim()) {
+      this._addCategory(catInput.value);
+    }
+
     if (!name) {
       inputs[0].setCustomValidity("Name is required");
       inputs[0].reportValidity();

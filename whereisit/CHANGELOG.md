@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.41
+- Search now also matches item and box descriptions
+- Add created/modified date tracking for boxes
+- Fix item creation crash when no categories are provided
+- Auto-include typed category text on save (no need to press Enter)
+
 ## 0.4.40
 - Add Multi-Category support for items
 - Add Pills (chips) UI for managing multiple categories

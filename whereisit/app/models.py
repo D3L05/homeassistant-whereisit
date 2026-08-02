@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Table
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Table, DateTime
 from sqlalchemy.orm import relationship
+from datetime import datetime
 from .database import Base
 
 class StorageUnit(Base):
@@ -19,6 +20,8 @@ class StorageBox(Base):
     name = Column(String, index=True)
     description = Column(String, nullable=True)
     unit_id = Column(Integer, ForeignKey("storage_units.id"))
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
 
     unit = relationship("StorageUnit", back_populates="boxes")
     items = relationship("Item", back_populates="box")

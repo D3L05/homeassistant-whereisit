@@ -99,7 +99,7 @@ export class SearchView extends LitElement {
                 <mwc-list-item twoline graphic="medium" @click=${(e) => this._openItemDetail(e, item)}>
                     <span>${item.name}</span>
                     <span slot="secondary">
-                        In: ${item.box ? item.box.name : 'Unknown Box'} 
+                        ${item.description ? html`${item.description} · ` : ''}In: ${item.box ? item.box.name : 'Unknown Box'} 
                         ${item.categories && item.categories.length > 0 ? html`<span style="margin-left: 8px; font-style: italic; color: var(--mdc-theme-primary);">[${item.categories.join(', ')}]</span>` : (item.category ? html`<span style="margin-left: 8px; font-style: italic; color: var(--mdc-theme-primary);">[${item.category}]</span>` : '')}
                     </span>
                     ${item.photo_path

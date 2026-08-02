@@ -98,6 +98,15 @@ async def startup():
         except Exception as e:
             logger.error(f"Error during category migration: {e}")
 
+        # Box timestamps migration
+        for col in ["created_at", "updated_at"]:
+            try:
+                await conn.execute(text(f"ALTER TABLE storage_boxes ADD COLUMN {col} DATETIME;"))
+                logger.info(f"Added {col} column to storage_boxes table.")
+            except Exception as e:
+                if "duplicate column name" not in str(e).lower():
+                    logger.warning(f"Failed to add {col} column (might already exist): {e}")
+
 
 @app.get("/api/health")
 async def health_check():

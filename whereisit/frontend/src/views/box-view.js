@@ -285,6 +285,13 @@ export class BoxView extends LitElement {
             <div class="page-subtitle">${this.box.items.length} item${this.box.items.length === 1 ? '' : 's'}</div>
         ` : ''}
 
+      ${this.box.created_at || this.box.updated_at ? html`
+        <div style="padding: 0 16px 8px 56px; font-size: 0.75rem; color: #9e9e9e; display: flex; gap: 16px; flex-wrap: wrap;">
+            ${this.box.created_at ? html`<span>Created: ${this._formatDate(this.box.created_at)}</span>` : ''}
+            ${this.box.updated_at ? html`<span>Modified: ${this._formatDate(this.box.updated_at)}</span>` : ''}
+        </div>
+      ` : ''}
+
       ${this.box.items.length === 0 ? html`
         <div class="empty-state">
             <div class="empty-icon-wrapper">
@@ -524,6 +531,12 @@ export class BoxView extends LitElement {
             </html>
         `);
         doc.close();
+    }
+
+    _formatDate(dateStr) {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
     }
 }
 customElements.define('box-view', BoxView);

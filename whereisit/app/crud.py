@@ -110,6 +110,7 @@ async def create_item(db: AsyncSession, item: schemas.ItemCreate, box_id: int):
     categories_list = item_data.pop('categories', [])
     
     db_item = models.Item(**item_data, box_id=box_id)
+    db.add(db_item)
     
     for cat_name in categories_list:
         cat_name = cat_name.strip()
@@ -121,8 +122,6 @@ async def create_item(db: AsyncSession, item: schemas.ItemCreate, box_id: int):
             db_cat = models.Category(name=cat_name)
             db.add(db_cat)
         db_item.categories.append(db_cat)
-            
-        db.add(db_item)
     await db.commit()
     
     # Reload with categories to avoid MissingGreenlet error during serialization
@@ -219,7 +218,12 @@ async def search_storage(db: AsyncSession, query: str = "", category: str = None
     else:
         boxes = await db.execute(
             select(models.StorageBox)
-            .where(models.StorageBox.name.ilike(f"%{query}%"))
+            .where(
+                or_(
+                    models.StorageBox.name.ilike(f"%{query}%"),
+                    models.StorageBox.description.ilike(f"%{query}%")
+                )
+            )
         )
         boxes = boxes.scalars().all()
     
@@ -236,6 +240,7 @@ async def search_storage(db: AsyncSession, query: str = "", category: str = None
         conditions.append(
             or_(
                 models.Item.name.ilike(f"%{query}%"),
+                models.Item.description.ilike(f"%{query}%"),
                 models.Category.name.ilike(f"%{query}%")
             )
         )

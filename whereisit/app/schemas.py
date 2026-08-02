@@ -1,5 +1,6 @@
 from pydantic import BaseModel, field_validator
 from typing import List, Optional
+from datetime import datetime
 
 class ItemBase(BaseModel):
     name: str
@@ -36,6 +37,8 @@ class BoxCreate(BoxBase):
 class BoxSummary(BoxBase):
     id: int
     unit_id: int
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

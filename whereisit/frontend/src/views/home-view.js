@@ -228,7 +228,7 @@ export class HomeView extends LitElement {
               ${this.searchResults.items.map(item => html`
                 <mwc-list-item twoline graphic="medium" @click=${(e) => this._openItemDetail(e, item)} style="margin: 4px 8px; border-radius: 8px; overflow: hidden; --mdc-list-item-graphic-margin: 16px;">
                   <span>${item.name}</span>
-                  <span slot="secondary">In Box: ${item.box ? item.box.name : 'Unknown'} • Qty: ${item.quantity} ${item.categories && item.categories.length > 0 ? `• [${item.categories.join(', ')}]` : (item.category ? `• [${item.category}]` : '')}</span>
+                  <span slot="secondary">${item.description ? `${item.description} · ` : ''}In Box: ${item.box ? item.box.name : 'Unknown'} • Qty: ${item.quantity} ${item.categories && item.categories.length > 0 ? `• [${item.categories.join(', ')}]` : (item.category ? `• [${item.category}]` : '')}</span>
                   ${item.photo_path
         ? html`<img slot="graphic" src="${window.AppRouter ? window.AppRouter.urlForPath(item.photo_path) : item.photo_path}" style="width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; box-shadow: 0 1px 3px rgba(0,0,0,0.1);" />`
         : html`<mwc-icon slot="graphic" style="color: gray; font-size: 32px; background: #f5f5f5; border-radius: 8px; display: flex; align-items: center; justify-content: center; width: 48px; height: 48px;">category</mwc-icon>`}

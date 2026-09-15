@@ -7,6 +7,7 @@ import '@material/mwc-button';
 import '../components/add-item-dialog.js';
 import '../components/edit-box-dialog.js';
 import '../components/edit-item-dialog.js';
+import { sortByName, nextSortDirection, sortLabel } from '../utils/sort-by-name.js';
 
 // Color palette for item cards (same as categories view)
 const ITEM_COLORS = [
@@ -231,16 +232,19 @@ export class BoxView extends LitElement {
 
     static properties = {
         location: { type: Object },
-        box: { type: Object }
+        box: { type: Object },
+        sortDirection: { type: String }
     };
 
     constructor() {
         super();
         this.box = null;
+        this.sortDirection = 'asc';
     }
 
     onBeforeEnter(location) {
         this.boxId = location.params.id;
+        this.sortDirection = 'asc';
         this._fetchBox(this.boxId);
     }
 
@@ -277,6 +281,12 @@ export class BoxView extends LitElement {
         <div class="header-actions">
             <mwc-icon-button icon="print" @click=${this._printLabel} title="Print Label"></mwc-icon-button>
             <mwc-icon-button icon="qr_code" @click=${this._showQR} title="View QR Code"></mwc-icon-button>
+            <mwc-icon-button
+              icon="sort_by_alpha"
+              title=${sortLabel(this.sortDirection, 'items')}
+              aria-label=${sortLabel(this.sortDirection, 'items')}
+              @click=${this._toggleSort}
+            ></mwc-icon-button>
         </div>
       </div>
 
@@ -302,7 +312,7 @@ export class BoxView extends LitElement {
         </div>
       ` : html`
         <div class="item-grid">
-            ${this.box.items.map(item => {
+            ${sortByName(this.box.items, this.sortDirection).map(item => {
                     const color = getColorForItem(item.name);
                     return html`
                 <div class="item-card" @click=${(e) => this._openItemDetail(e, item)}>
@@ -378,6 +388,10 @@ export class BoxView extends LitElement {
 
     _openAddItemDialog() {
         this.shadowRoot.querySelector('add-item-dialog').show();
+    }
+
+    _toggleSort() {
+        this.sortDirection = nextSortDirection(this.sortDirection);
     }
 
     _openEditBoxDialog() {

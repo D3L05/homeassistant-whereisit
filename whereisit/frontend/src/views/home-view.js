@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import '@material/mwc-button';
 import '@material/mwc-icon';
+import '@material/mwc-icon-button';
 import '@material/mwc-fab';
 import '@material/mwc-textfield';
 import '@material/mwc-list';
@@ -9,6 +10,7 @@ import { Router } from '@vaadin/router';
 import '../components/add-unit-dialog.js';
 import '../components/edit-unit-dialog.js';
 import '../components/qr-scanner-dialog.js';
+import { sortByName, nextSortDirection, sortLabel } from '../utils/sort-by-name.js';
 
 export class HomeView extends LitElement {
   static styles = css`
@@ -146,7 +148,8 @@ export class HomeView extends LitElement {
     searchResults: { type: Object },
     searchQuery: { type: String },
     categories: { type: Array },
-    selectedCategory: { type: String }
+    selectedCategory: { type: String },
+    sortDirection: { type: String }
   };
 
   constructor() {
@@ -156,6 +159,7 @@ export class HomeView extends LitElement {
     this.searchQuery = '';
     this.categories = [];
     this.selectedCategory = null;
+    this.sortDirection = 'asc';
   }
 
   firstUpdated() {
@@ -250,13 +254,19 @@ export class HomeView extends LitElement {
       <div class="header">
         <h2>Storage Units</h2>
         <div class="header-actions">
+            <mwc-icon-button
+              icon="sort_by_alpha"
+              title=${sortLabel(this.sortDirection, 'storage units')}
+              aria-label=${sortLabel(this.sortDirection, 'storage units')}
+              @click=${this._toggleSort}
+            ></mwc-icon-button>
             <mwc-button class="scan-btn" label="Scan QR" icon="qr_code_scanner" @click=${this._openScanner}></mwc-button>
         </div>
       </div>
       
       <div class="unit-grid">
         ${this.units.length === 0 ? html`<p style="padding: 0 16px;">No units found.</p>` : ''}
-        ${this.units.map(unit => html`
+        ${sortByName(this.units, this.sortDirection).map(unit => html`
           <div class="unit-card" @click=${() => this._navigateToUnit(unit.id)}>
             <div class="unit-card-header">
                 <mwc-icon-button class="edit-btn" icon="edit" @click=${(e) => this._openEditUnitDialog(e, unit)}></mwc-icon-button>
@@ -276,6 +286,10 @@ export class HomeView extends LitElement {
 
   _openScanner() {
     this.shadowRoot.querySelector('qr-scanner-dialog').show();
+  }
+
+  _toggleSort() {
+    this.sortDirection = nextSortDirection(this.sortDirection);
   }
 
   _handleQrScanned(e) {

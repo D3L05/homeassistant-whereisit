@@ -6,6 +6,7 @@ import '@material/mwc-dialog';
 import '../components/add-box-dialog.js';
 import '../components/edit-unit-dialog.js';
 import '../components/edit-box-dialog.js';
+import { sortByName, nextSortDirection, sortLabel } from '../utils/sort-by-name.js';
 
 export class UnitView extends LitElement {
   static styles = css`
@@ -70,16 +71,19 @@ export class UnitView extends LitElement {
 
   static properties = {
     location: { type: Object },
-    unit: { type: Object }
+    unit: { type: Object },
+    sortDirection: { type: String }
   };
 
   constructor() {
     super();
     this.unit = null;
+    this.sortDirection = 'asc';
   }
 
   onBeforeEnter(location) {
     this.unitId = location.params.id;
+    this.sortDirection = 'asc';
     this._fetchUnit(this.unitId);
   }
 
@@ -105,11 +109,17 @@ export class UnitView extends LitElement {
             <mwc-icon-button icon="arrow_back" @click=${this._goBack}></mwc-icon-button>
             <h2 style="margin:0;">${this.unit.name}</h2>
             <mwc-icon-button icon="edit" @click=${this._openEditUnitDialog} style="--mdc-icon-size: 20px; color: gray;"></mwc-icon-button>
+            <mwc-icon-button
+              icon="sort_by_alpha"
+              title=${sortLabel(this.sortDirection, 'boxes')}
+              aria-label=${sortLabel(this.sortDirection, 'boxes')}
+              @click=${this._toggleSort}
+            ></mwc-icon-button>
         </div>
       </div>
 
       <div class="box-grid">
-        ${this.unit.boxes.map(box => html`
+        ${sortByName(this.unit.boxes, this.sortDirection).map(box => html`
           <div class="box-card" @click=${() => this._navigateToBox(box.id)}>
             <div class="box-card-header">
                 <mwc-icon-button class="edit-btn" icon="edit" @click=${(e) => this._openEditBoxDialog(e, box)}></mwc-icon-button>
@@ -130,6 +140,10 @@ export class UnitView extends LitElement {
 
   _openEditUnitDialog() {
     this.shadowRoot.querySelector('edit-unit-dialog').show(this.unit);
+  }
+
+  _toggleSort() {
+    this.sortDirection = nextSortDirection(this.sortDirection);
   }
 
   _openEditBoxDialog(e, box) {

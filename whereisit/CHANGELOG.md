@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.42
+- Add name sorting controls for storage units, boxes, and items
+- Toggle each list between ascending (A–Z) and descending (Z–A) order
+- Use case-insensitive natural sorting for names such as `Box 2` and `Box 10`
+- Keep sorting local to the current view without changing stored data
+
 ## 0.4.41
 - Search now also matches item and box descriptions
 - Add created/modified date tracking for boxes

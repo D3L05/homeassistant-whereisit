@@ -4,13 +4,25 @@
 
 # WhereIsIt - Home Assistant Addon
 
-A physical storage management system for Home Assistant.
+WhereIsIt is a mobile-friendly Home Assistant add-on for organizing physical storage. Track storage units such as a garage or attic, the boxes inside them, and the items stored in each box.
 
 ## Features
-- **Hierarchical Storage**: Units -> Boxes -> Items
-- **QR Codes**: Generate and print QR codes for boxes.
-- **Search**: Quickly find items or boxes.
-- **Mobile First**: Designed for the Home Assistant Companion App.
+- **Hierarchical Storage**: Organize everything as Storage Units -> Boxes -> Items.
+- **Name Sorting**: Sort storage units, boxes, and items by name in ascending (A–Z) or descending (Z–A) order.
+- **Natural Name Ordering**: Names containing numbers sort naturally, so `Box 2` appears before `Box 10`.
+- **QR Codes**: Generate and print QR codes for boxes for quick access to their contents.
+- **Search**: Quickly find items or boxes by name, description, or category.
+- **Categories**: Assign multiple categories to items and filter by category.
+- **Photos**: Add photos to items to make them easier to identify.
+- **Mobile First**: Designed for use from the Home Assistant Companion App.
+
+## How it works
+
+1. Create a **Storage Unit** for a location such as Garage, Attic, or Basement.
+2. Add **Boxes** inside the storage unit.
+3. Add **Items** to each box, including quantities, categories, descriptions, and photos.
+4. Use the **sort icon** on any list to switch between A–Z and Z–A name order.
+5. Open a box from its QR code to see its contents quickly.
 
 ## Installation
 
